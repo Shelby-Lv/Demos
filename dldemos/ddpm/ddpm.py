@@ -84,7 +84,7 @@ def visualize_forward():
     from dldemos.ddpm.dataset import get_dataloader
 
     n_steps = 100
-    device = 'cuda'
+    device = 'cuda:3'
     dataloader = get_dataloader(5)
     x, _ = next(iter(dataloader))
     x = x.to(device)
