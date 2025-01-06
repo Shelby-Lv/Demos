@@ -17,7 +17,7 @@ batch_size = 512
 n_epochs = 100
 
 
-def train(ddpm: DDPM, net, device='cuda:3', ckpt_path='dldemos/ddpm/model.pth'):
+def train(ddpm: DDPM, net, device='cuda', ckpt_path='dldemos/ddpm/ckpts/model_epoch_{epoch}.pth'):
     print('batch size:', batch_size)
     n_steps = ddpm.n_steps#扩散过程的总步数
     dataloader = get_dataloader(batch_size)#获取数据加载器
@@ -43,8 +43,17 @@ def train(ddpm: DDPM, net, device='cuda:3', ckpt_path='dldemos/ddpm/model.pth'):
             total_loss += loss.item() * current_batch_size#累计当前批次的损失
         total_loss /= len(dataloader.dataset)#计算平均损失
         toc = time.time()#获取当前时间
-        torch.save(net.state_dict(), ckpt_path)#保存模型
+
+        if e%10==0:
+            epoch_ckpt_path = ckpt_path.format(epoch=e)
+            torch.save(net.state_dict(), epoch_ckpt_path)#保存模型
+            print(f"successfully save checkpoint epoch{e}")
+
         print(f'epoch {e} loss: {total_loss} elapsed {(toc - tic):.2f}s')
+
+        if(e==99):
+            torch.save(net.state_dict(),"dldemos/ddpm/ckpts/model.pth")
+            print("successfully save final checkpoint ")
     print('Done')
 
 
@@ -52,7 +61,7 @@ def sample_imgs(ddpm,#生成图像函数
                 net,
                 output_path,
                 n_sample=81,
-                device='cuda:3',
+                device='cuda',
                 simple_var=True):
     net = net.to(device)#移动到指定设备
     net = net.eval()#设置网络评估模式
@@ -84,13 +93,15 @@ if __name__ == '__main__':
     n_steps = 1000
     config_id = 4#使用unet_res_cfg
     device = 'cuda:3'#使用GPU
-    model_path = 'dldemos/ddpm/model_unet_res.pth'#模型保存路径
+    os.makedirs('dldemos/ddpm/ckpts', exist_ok=True)
+    ckpt_path = 'dldemos/ddpm/ckpts/model_epoch_{epoch}.pth'#模型保存路径
+    model_path='dldemos/ddpm/ckpts/model.pth'
 
     config = configs[config_id]#选择网络配置
     net = build_network(config, n_steps)#构建网络
     ddpm = DDPM(device, n_steps)#初始化DDPM模型
 
-    train(ddpm, net, device=device, ckpt_path=model_path)#训练模型
+    train(ddpm, net, device=device, ckpt_path=ckpt_path)#训练模型
 
     net.load_state_dict(torch.load(model_path))#加载训练好的模型
     sample_imgs(ddpm, net, 'work_dirs/diffusion.jpg', device=device)
