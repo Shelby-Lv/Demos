@@ -1,7 +1,7 @@
 import torchvision
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Lambda, ToTensor
-
+import numpy as np
 
 def download_dataset():
     mnist = torchvision.datasets.MNIST(root='./dldemos/ddpm/data/mnist', download=True)#下载手写数字数据集
@@ -9,6 +9,8 @@ def download_dataset():
     id = 4#选中数据集的第四个样本
     img, label = mnist[id]
     print(img)
+    x=np.array(img)#输出一下图像看一眼
+    print(x)
     print(label)
 
     # On computer with monitor
